@@ -366,9 +366,7 @@
 			{
 				var listEnemy = document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle');
 				var pente = (y2-y1)/(x2-x1);
-				console.log("pente "+pente);
 				var reste = (y1-pente*x1);
-				console.log("reste "+reste);
 				var j =-1;
 				var dist = 1000000000;
 				for(var i = 0; i<listEnemy.length; i++)
@@ -378,10 +376,6 @@
 						var X=parseInt(listEnemy.item(i).getAttributeNS(null,'cx'))
 						var Y=parseInt(listEnemy.item(i).getAttributeNS(null,'cy'))
 						var distance = (-pente*X+Y-reste)*(-pente*X+Y-reste)/(pente*pente+1);
-						console.log("X "+X);
-						console.log("Y "+Y);
-						console.log("distance "+distance);
-						console.log("taille "+listEnemy.item(i).getAttributeNS(null,'r'));
 						if(distance<=listEnemy.item(i).getAttributeNS(null,'r')*listEnemy.item(i).getAttributeNS(null,'r'))
 						{
 							if(dist>(listEnemy.item(i).getAttributeNS(null,'cx')-positionX)*(listEnemy.item(i).getAttributeNS(null,'cx')-positionX)+(listEnemy.item(i).getAttributeNS(null,'cy')-positionY)*(listEnemy.item(i).getAttributeNS(null,'cy')-positionY))
@@ -446,12 +440,50 @@
 				{
 					myCircle.setAttributeNS(null,"id",parseInt(document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle')[document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle').length-1].getAttributeNS(null,'id'))+1);
 				}
-				myCircle.setAttributeNS(null,"cx",100);
-				myCircle.setAttributeNS(null,"cy",100);
-				myCircle.setAttributeNS(null,"r",10);
-				myCircle.setAttributeNS(null,"fill","green");
-				myCircle.setAttributeNS(null,"stroke","none");
-				document.getElementById("enemy").appendChild(myCircle);
+				var randomVar = Math.floor((Math.random() * 4) + 1);
+				if(randomVar==1)
+				{
+					myCircle.setAttributeNS(null,"cx",-10);
+					myCircle.setAttributeNS(null,"cy",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'width')) ));
+					myCircle.setAttributeNS(null,"r",10);
+					myCircle.setAttributeNS(null,"fill","green");
+					myCircle.setAttributeNS(null,"stroke","none");
+					document.getElementById("enemy").appendChild(myCircle);
+					console.log("gauche");
+				}
+				else if(randomVar==2)
+				{
+					myCircle.setAttributeNS(null,"cx",parseInt(document.getElementById('sssvg').getAttributeNS(null,'height'))+10);
+					myCircle.setAttributeNS(null,"cy",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'width')) ));
+					myCircle.setAttributeNS(null,"r",10);
+					myCircle.setAttributeNS(null,"fill","green");
+					myCircle.setAttributeNS(null,"stroke","none");
+					document.getElementById("enemy").appendChild(myCircle);
+					console.log("droite");
+					console.log(myCircle);
+				}
+				else if(randomVar==3)
+				{
+					myCircle.setAttributeNS(null,"cx",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'height')) ));
+					myCircle.setAttributeNS(null,"cy",-10);
+					myCircle.setAttributeNS(null,"r",10);
+					myCircle.setAttributeNS(null,"fill","green");
+					myCircle.setAttributeNS(null,"stroke","none");
+					document.getElementById("enemy").appendChild(myCircle);
+					console.log("haut");
+				}
+				else
+				{
+					myCircle.setAttributeNS(null,"cx",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'height')) ));
+					myCircle.setAttributeNS(null,"cy",parseInt(document.getElementById('sssvg').getAttributeNS(null,'width'))+10);
+					myCircle.setAttributeNS(null,"r",10);
+					myCircle.setAttributeNS(null,"fill","green");
+					myCircle.setAttributeNS(null,"stroke","none");
+					document.getElementById("enemy").appendChild(myCircle);
+					console.log("bas");
+					console.log(myCircle);
+				}
+				
 				socket.emit('newEnemy',{X : myCircle.getAttributeNS(null,"cx"),Y: myCircle.getAttributeNS(null,"cy"),r: myCircle.getAttributeNS(null,"r"), pseudo : myCircle.getAttributeNS(null,"id")});
 			}
 			
