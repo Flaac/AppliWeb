@@ -43,7 +43,7 @@ io.sockets.on('connection', function (socket, pseudo) {
 		}
 		
 
-    });
+    })
 
 	socket.on('position', function(data)
     {
@@ -61,6 +61,29 @@ io.sockets.on('connection', function (socket, pseudo) {
 	socket.on('newEnemy',function(data)
 	{
 		socket.broadcast.emit('newEnemy',data);
+	})
+	
+	socket.on('mort',function(pseudo)
+	{
+		socket.broadcast.emit('mort',pseudo);
+		for (var i = 0; i < tableau_player_ID.length; i++) 
+        {
+            if(tableau_player_ID[i]==socket.pseudo)
+            {
+				tableau_player_ID.splice(i,1);
+                tableau_player_coord.splice(2*i,2);
+            }
+        }
+		if(socket.pseudo==masterChief&&tableau_player_ID.length>0)
+		{
+			console.log("changement masterChief");
+			masterChief=tableau_player_ID[0];
+			socket.broadcast.emit('newMasterChief',masterChief);
+		}else{
+			console.log("y'a personne!!");
+			masterChief=" ";
+			socket.broadcast.emit('newMasterChief',masterChief);
+		}
 	})
 	
 	// Gere tous les missiles
@@ -90,13 +113,14 @@ io.sockets.on('connection', function (socket, pseudo) {
 				tableau_player_ID.splice(i,1);
                 tableau_player_coord.splice(2*i,2);
             }
-        };
+        }
 		if(socket.pseudo==masterChief&&tableau_player_ID.length>0)
 		{
 			masterChief=tableau_player_ID[0];
 			socket.broadcast.emit('newMasterChief',masterChief);
 		}else{
 			masterChief=" ";
+			socket.broadcast.emit('newMasterChief',masterChief);
 		}
 		socket.broadcast.emit('mort_joueur',socket.pseudo);
 		console.log(tableau_player_ID);

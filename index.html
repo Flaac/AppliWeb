@@ -22,7 +22,7 @@
             <g id="missile">
             </g>
 			<g id="joueur">
-                <circle id="me" cx="200" cy="200" r="10" fill="red" />
+                <circle id="me" cx="50" cy="50" r="10" fill="red" />
             </g>
 			<g id="enemy">
             </g>
@@ -48,11 +48,15 @@
             ;
             var positionX = 50;
             var positionY = 50;
+			var vie = 100;
 			var masterChief = " ";
 			var dmc_mouv = null;
-			var dmc_creata = null;
+			var dmc_create = null;
+			var dmc_up = null;
+			var dmc_down = null;
+			var dmc_left = null;
+			var dmc_right = null;
             var tableau_player = new Array();
-            var tableau_block = new Array();
             var nb_personne_connectees;
 			var nombrePixel = 5;
 			var svgNS = "http://www.w3.org/2000/svg";
@@ -77,7 +81,7 @@
                 new_ligne.setAttribute("y2", data.y2);
                 new_ligne.setAttribute("stroke","green");
                 document.getElementById("missile").appendChild(new_ligne);
-                setTimeout(destroy,100);
+                setTimeout(destroy,50);
             })
 			
 			socket.on('newMasterChief', function(pseu)
@@ -150,8 +154,13 @@
 				{
 					aux.setAttribute('cx',data.positionX);
 					aux.setAttribute('cy',data.positionY);
-					
+					var distance = (aux.getAttributeNS(null,"cx")-positionX)*(aux.getAttributeNS(null,"cx")-positionX)+(aux.getAttributeNS(null,"cy")-positionY)*(aux.getAttributeNS(null,"cy")-positionY)
+					if(distance<200)
+					{
+						degat();
+					}
 				}
+				
 			})
 
 			socket.on('enemyKill',function(id)
@@ -160,26 +169,73 @@
 				var pere = enemy.parentNode;
 				pere.removeChild(enemy);
 			})
-            //----------------------------------------------------------------------    
+            
+			socket.on('mort',function(pseudo)
+			{
+				var mort = document.getElementById(pseudo);
+				var pere = mort.parentNode;
+				pere.removeChild(mort);
+			})
+			
+			//----------------------------------------------------------------------    
             //-------------------------Listener-------------------------------------
             //----------------------------------------------------------------------    
 
 
             //Listener pour le déplacement
-            document.addEventListener('keyup',function(e)
+            document.addEventListener('keydown',function(e)
                 {
-                    draw_me(e);
+					if(e.keyCode===40&&dmc_down==null)
+					{
+						dmc_down=setInterval(go_down,50);
+					}
+					else if(e.keyCode===39&&dmc_right==null)
+					{
+						dmc_right=setInterval(go_right,50);
+					}
+					else if(e.keyCode===38&&dmc_up==null)
+					{
+						dmc_up=setInterval(go_up,50);
+					}
+					else if(e.keyCode===37&&dmc_left==null)
+					{
+						dmc_left=setInterval(go_left,50);
+					}
                     socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
-					//console.log(document.getElementById('sssvg'));
-                },
+				},
                 false);
+				
+			 document.addEventListener('keyup',function(e)
+			{
+				if(e.keyCode===40)
+				{
+					clearInterval(dmc_down);
+					dmc_down=null;
+				}
+				else if(e.keyCode===39)
+				{
+					clearInterval(dmc_right);
+					dmc_right=null;
+				}
+				else if(e.keyCode===38)
+				{
+					clearInterval(dmc_up);
+					dmc_up=null;
+				}
+				else if(e.keyCode===37)
+				{
+					clearInterval(dmc_left);
+					dmc_left=null;
+				}
+			},
+			false);
 
 
             //Listener pour les missiles
-            sssvg.addEventListener('click',function(event)
+            sssvg.addEventListener('mousedown',function(event)
             {
                 tracer_ligne(event);
-                setTimeout(destroy,100);
+                setTimeout(destroy,50);
             })
 
 
@@ -269,96 +325,142 @@
 				enemyTouche(positionX,positionY,sopX,sopY);
             }
 
-
+			function degat()
+			{
+				vie=vie-10;
+				if(vie==0)
+				{
+					socket.emit('mort',pseudo);
+					var mort = document.getElementById(pseudo);
+					var pere = mort.parentNode;
+					pere.removeChild(mort);
+					clearInterval(dmc_create);
+					clearInterval(dmc_mouv);
+					
+				}
+			}
             //Actualise la position du joueur en prenant en compte la collision entre les murs
-            function draw_me(e)
-            {
-
-                old_positionX = positionX;
+			function go_up()
+			{
+				old_positionX = positionX;
                 old_positionY = positionY;
                 var pas = 10;
-                var longueur = tableau_block.length;
-                longueur = longueur/2;
                 var mouvementLegal;
                 mouvementLegal = 1;
-                if(e.keyCode===40)
-                {
-                    if(positionY<document.getElementById('sssvg').getAttributeNS(null,'width'))
-                    {
-                        for (var i = 0; i < tableau_block.length; i++) 
-                        {
-                            if(positionX-20<=tableau_block[2*i]&&positionX+20>=tableau_block[2*i]&&positionY+pas-20<=tableau_block[2*i+1]&&positionY+20+pas>=tableau_block[2*i+1])
-                            {
-                                mouvementLegal = 0;
-                            }
-                            
-                        };
-                        if(Boolean(mouvementLegal))
-                        {
-                            positionY = positionY + pas;
-                            
-                            
-                        }
-                        
-                    }
-                    
-                }
-                else if(e.keyCode===39)
-                {
-                    if(positionX<document.getElementById('sssvg').getAttributeNS(null,'height'))
-                    {
-                        for (var i = 0; i < tableau_block.length; i++) 
-                        {
-                            if(positionX+pas-20<=tableau_block[2*i]&&positionX+20+pas>=tableau_block[2*i]&&positionY-20<=tableau_block[2*i+1]&&positionY+20>=tableau_block[2*i+1])
-                            {
-                                mouvementLegal = 0;
-                            }
-                        };
-                        if(Boolean(mouvementLegal))
-                        {
-                            positionX = positionX + pas;
-                        }
-                        
-                    }
-                }
-                else if(e.keyCode===38)
-                {
-                    if(positionY>0)
-                    {
-                        for (var i = 0; i < tableau_block.length; i++) 
-                        {
-                            if(positionX-20<=tableau_block[2*i]&&positionX+20>=tableau_block[2*i]&&positionY-pas-20<=tableau_block[2*i+1]&&positionY-pas+20>=tableau_block[2*i+1])
-                            {
-                                mouvementLegal = 0;
-                            }
-                        };
-                        if(Boolean(mouvementLegal))
-                        {
-                            positionY = positionY - pas;
-                        }
-                    }
-                }
-                else if(e.keyCode===37)
-                {
-                    if(positionX>0)
-                    {
-                        for (var i = 0; i < tableau_block.length; i++) 
-                        {
-                            if(positionX-pas-20<=tableau_block[2*i]&&positionX+20-pas>=tableau_block[2*i]&&positionY-20<=tableau_block[2*i+1]&&positionY+20>=tableau_block[2*i+1])
-                            {
-                                mouvementLegal = 0;
-                            }
-                        };
-                        if(Boolean(mouvementLegal))
-                        {
-                            positionX = positionX - pas;
-                        }
-                    }
-                }
-                document.getElementById(pseudo).setAttribute('cx',positionX);
+				if(positionY>0)
+				{
+					var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
+					for (var i = 0; i < listPlayer.length; i++) 
+					{
+						var distance = (listPlayer.item(i).getAttributeNS(null,'cx')-(positionX))*(listPlayer.item(i).getAttributeNS(null,'cx')-(positionX))+(listPlayer.item(i).getAttributeNS(null,'cy')-(positionY - pas))*(listPlayer.item(i).getAttributeNS(null,'cy')-(positionY - pas));
+						if(distance<=200&&(listPlayer.item(i).getAttributeNS(null,'cx')!=positionX||listPlayer.item(i).getAttributeNS(null,'cy')!=positionY))
+						{
+							mouvementLegal = 0;
+							console.log(distance);
+						}
+					}
+					if(Boolean(mouvementLegal))
+					{
+						positionY = positionY - pas;
+					}
+				}
+				document.getElementById(pseudo).setAttribute('cx',positionX);
                 document.getElementById(pseudo).setAttribute('cy',positionY);
-            }
-        
+				socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
+			}
+			
+			function go_down()
+			{
+				old_positionX = positionX;
+                old_positionY = positionY;
+                var pas = 10;
+                var mouvementLegal;
+                mouvementLegal = 1;
+				if(positionY<document.getElementById('sssvg').getAttributeNS(null,'width'))
+				{
+					var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
+					for (var i = 0; i < listPlayer.length; i++) 
+					{
+						var distance = (listPlayer.item(i).getAttributeNS(null,'cx')-(positionX))*(listPlayer.item(i).getAttributeNS(null,'cx')-(positionX))+(listPlayer.item(i).getAttributeNS(null,'cy')-(positionY + pas))*(listPlayer.item(i).getAttributeNS(null,'cy')-(positionY + pas));
+						if(distance<=200&&(listPlayer.item(i).getAttributeNS(null,'cx')!=positionX||listPlayer.item(i).getAttributeNS(null,'cy')!=positionY))
+						{
+							mouvementLegal = 0;
+							console.log(distance);
+						}
+					}
+					if(Boolean(mouvementLegal))
+					{
+						positionY = positionY + pas;
+						
+						
+					}
+					
+				}
+				document.getElementById(pseudo).setAttribute('cx',positionX);
+                document.getElementById(pseudo).setAttribute('cy',positionY);
+				socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
+			}
+            
+			function go_left()
+			{
+				old_positionX = positionX;
+                old_positionY = positionY;
+                var pas = 10;
+                var mouvementLegal;
+                mouvementLegal = 1;
+				if(positionX>0)
+				{
+					var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
+					for (var i = 0; i < listPlayer.length; i++) 
+					{
+						var distance = (listPlayer.item(i).getAttributeNS(null,'cx')-(positionX - pas))*(listPlayer.item(i).getAttributeNS(null,'cx')-(positionX - pas))+(listPlayer.item(i).getAttributeNS(null,'cy')-(positionY))*(listPlayer.item(i).getAttributeNS(null,'cy')-(positionY));
+						if(distance<=200&&(listPlayer.item(i).getAttributeNS(null,'cx')!=positionX||listPlayer.item(i).getAttributeNS(null,'cy')!=positionY))
+						{
+							mouvementLegal = 0;
+							console.log(distance);
+						}
+					}
+					if(Boolean(mouvementLegal))
+					{
+						positionX = positionX - pas;
+					}
+				}
+				document.getElementById(pseudo).setAttribute('cx',positionX);
+                document.getElementById(pseudo).setAttribute('cy',positionY);
+				socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
+			}
+			
+			function go_right()
+			{
+				old_positionX = positionX;
+                old_positionY = positionY;
+                var pas = 10;
+                var mouvementLegal;
+                mouvementLegal = 1;
+				if(positionX<document.getElementById('sssvg').getAttributeNS(null,'height'))
+				{
+					var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
+					for (var i = 0; i < listPlayer.length; i++) 
+					{
+						var distance = (listPlayer.item(i).getAttributeNS(null,'cx')-(positionX + pas))*(listPlayer.item(i).getAttributeNS(null,'cx')-(positionX + pas))+(listPlayer.item(i).getAttributeNS(null,'cy')-(positionY))*(listPlayer.item(i).getAttributeNS(null,'cy')-(positionY));
+						if(distance<=200&&(listPlayer.item(i).getAttributeNS(null,'cx')!=positionX||listPlayer.item(i).getAttributeNS(null,'cy')!=positionY))
+						{
+							mouvementLegal = 0;
+							console.log(distance);
+						}
+					}
+					if(Boolean(mouvementLegal))
+					{
+						positionX = positionX + pas;
+					}
+					
+				}
+				document.getElementById(pseudo).setAttribute('cx',positionX);
+                document.getElementById(pseudo).setAttribute('cy',positionY);
+				socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
+			}
+			
+			        
 			function enemyTouche(x1,y1,x2,y2)
 			{
 				var listEnemy = document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle');
@@ -420,6 +522,12 @@
 						listEnemy.item(i).setAttributeNS(null,"cx",(parseInt(listPlayer.item(min).getAttributeNS(null,"cx"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cx")))*nombrePixel/total+parseInt(listEnemy.item(i).getAttributeNS(null,"cx")));
 						listEnemy.item(i).setAttributeNS(null,"cy",(parseInt(listPlayer.item(min).getAttributeNS(null,"cy"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cy")))*nombrePixel/total+parseInt(listEnemy.item(i).getAttributeNS(null,"cy")));
 					}
+					distance = (listEnemy.item(i).getAttributeNS(null,"cx")-positionX)*(listEnemy.item(i).getAttributeNS(null,"cx")-positionX)+(listEnemy.item(i).getAttributeNS(null,"cy")-positionY)*(listEnemy.item(i).getAttributeNS(null,"cy")-positionY)
+					if(distance<200)
+					{
+						degat();
+						console.log(vie);
+					}
 					socket.emit('mouvementEnemy',{pseudo : listEnemy.item(i).getAttributeNS(null,'id'),positionX : listEnemy.item(i).getAttributeNS(null,'cx'), positionY : listEnemy.item(i).getAttributeNS(null,'cy')});
 				}
 			}
@@ -446,7 +554,6 @@
 					myCircle.setAttributeNS(null,"fill","green");
 					myCircle.setAttributeNS(null,"stroke","none");
 					document.getElementById("enemy").appendChild(myCircle);
-					console.log("gauche");
 				}
 				else if(randomVar==2)
 				{
@@ -456,8 +563,6 @@
 					myCircle.setAttributeNS(null,"fill","green");
 					myCircle.setAttributeNS(null,"stroke","none");
 					document.getElementById("enemy").appendChild(myCircle);
-					console.log("droite");
-					console.log(myCircle);
 				}
 				else if(randomVar==3)
 				{
@@ -467,7 +572,6 @@
 					myCircle.setAttributeNS(null,"fill","green");
 					myCircle.setAttributeNS(null,"stroke","none");
 					document.getElementById("enemy").appendChild(myCircle);
-					console.log("haut");
 				}
 				else
 				{
@@ -477,8 +581,6 @@
 					myCircle.setAttributeNS(null,"fill","green");
 					myCircle.setAttributeNS(null,"stroke","none");
 					document.getElementById("enemy").appendChild(myCircle);
-					console.log("bas");
-					console.log(myCircle);
 				}
 				
 				socket.emit('newEnemy',{X : myCircle.getAttributeNS(null,"cx"),Y: myCircle.getAttributeNS(null,"cy"),r: myCircle.getAttributeNS(null,"r"), pseudo : myCircle.getAttributeNS(null,"id")});
