@@ -49,8 +49,8 @@
             var positionX = 50;
             var positionY = 50;
 			var masterChief = " ";
-			var dmc_setTimeout = null;
-			var dmc_setTimeout2 = null;
+			var dmc_mouv = null;
+			var dmc_creata = null;
             var tableau_player = new Array();
             var tableau_block = new Array();
             var nb_personne_connectees;
@@ -66,9 +66,6 @@
             {
                 $('#nbconnect > p:nth-child(1)').text(data );
             })
-
-
-
 
             // Gere les missiles des autes joueurs
             socket.on('creationLigne',function(data)
@@ -90,8 +87,8 @@
 				console.log(masterChief+"et"+pseudo);
 				if(masterChief==pseudo)
 				{
-					dmc_setTimeout = setInterval(mouvementEnemy,50);
-					dmc_setTimeout2 = setInterval(newEnemy,1000);
+					dmc_mouv = setInterval(mouvementEnemy,50);
+					dmc_create = setInterval(newEnemy,1000);
 				}
 			})
 
@@ -160,7 +157,7 @@
 			socket.on('enemyKill',function(id)
 			{
 				var enemy = document.getElementById(id);
-				var pere = joueur.parentNode;
+				var pere = enemy.parentNode;
 				pere.removeChild(enemy);
 			})
             //----------------------------------------------------------------------    
@@ -389,7 +386,7 @@
 				}
 				if(j!=-1)
 				{
-					socket.emit('killEnemy',listEnemy.item(j).getAttributeNS(null,'id'));
+					socket.emit('enemyKill',listEnemy.item(j).getAttributeNS(null,'id'));
 					var pere = listEnemy.item(j).parentNode;
 					pere.removeChild(listEnemy.item(j));
 				}
