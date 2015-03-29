@@ -1,0 +1,462 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Yo bitch !</title>
+        <style>
+            #zone_chat strong {
+                color: white;
+                background-color: black;
+                padding: 2px;
+            }
+        </style>
+    </head>
+ 
+    <body>
+        
+        <!-- Mettre une classe spécifique nommé other sur les cercle représentant les autres joueurs -->
+        <svg id="sssvg" width="1000" height="1000" style="border: 1px solid #000000;">
+            <g id="missile">
+            </g>
+			<g id="joueur">
+                <circle id="me" cx="200" cy="200" r="10" fill="red" />
+            </g>
+			<g id="enemy">
+            </g>
+        </svg>
+        <div id = "nbconnect"><p> " " </p></div>
+
+
+        <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+
+            // Connexion à socket.io
+            var socket = io.connect('http://localhost:8080');
+            
+            // On demande le pseudo, on l'envoie au serveur et on l'affiche dans le titre
+            var pseudo = prompt('Quel est votre pseudo ?');
+			$('#sssvg').find('circle').attr('id',pseudo);
+            socket.emit('nouveau_client', pseudo);
+            document.title = pseudo+' - '+ document.title;
+            
+
+            //Initialization 
+            ;
+            var positionX = 50;
+            var positionY = 50;
+			var masterChief = " ";
+			var dmc_setTimeout = null;
+			var dmc_setTimeout2 = null;
+            var tableau_player = new Array();
+            var tableau_block = new Array();
+            var nb_personne_connectees;
+			var nombrePixel = 5;
+			var svgNS = "http://www.w3.org/2000/svg";
+
+            //----------------------------------------------------------------------    
+            //-------------------------Sokcet.on------------------------------------
+            //----------------------------------------------------------------------    
+
+
+            socket.on('nb_connect',function(data)
+            {
+                $('#nbconnect > p:nth-child(1)').text(data );
+            })
+
+
+
+
+            // Gere les missiles des autes joueurs
+            socket.on('creationLigne',function(data)
+            {
+                var new_ligne = document.createElementNS("http://www.w3.org/2000/svg", 'line');
+                new_ligne.setAttribute("x1", data.x1);
+                new_ligne.setAttribute("y1", data.y1);
+                new_ligne.setAttribute("x2", data.x2);
+                new_ligne.setAttribute("y2", data.y2);
+                new_ligne.setAttribute("stroke","green");
+                document.getElementById("missile").appendChild(new_ligne);
+                setTimeout(destroy,100);
+            })
+			
+			socket.on('newMasterChief', function(pseu)
+			{
+				console.log("changement masterchief !");
+				masterChief=pseu;
+				console.log(masterChief+"et"+pseudo);
+				if(masterChief==pseudo)
+				{
+					dmc_setTimeout = setInterval(mouvementEnemy,50);
+					dmc_setTimeout2 = setInterval(newEnemy,1000);
+				}
+			})
+
+
+            socket.on('nouveau_client', function(pseu)
+            {
+                tableau_player.push(pseu);
+                var new_player = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+                new_player.setAttribute("cx", 50);
+                new_player.setAttribute("cy", 50);
+                new_player.setAttribute("r", 10);
+                new_player.setAttribute("fill", "blue");
+                new_player.setAttribute("id",pseu);
+                document.getElementById("joueur").appendChild(new_player);
+            })
+			
+			socket.on('autre_joueur', function(data)
+            {
+                tableau_player.push(data.pseudo);
+                var new_player = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+                new_player.setAttribute("cx", data.X);
+                new_player.setAttribute("cy", data.Y);
+                new_player.setAttribute("r", 10);
+                new_player.setAttribute("fill", "blue");
+                new_player.setAttribute("id",data.pseudo);
+                document.getElementById("joueur").appendChild(new_player);
+            })
+			
+			socket.on('mort_joueur',function(pseu)
+			{
+				var joueur = document.getElementById(pseu);
+				var pere = joueur.parentNode;
+				pere.removeChild(joueur);
+			})
+
+
+            socket.on('position',function(data)
+            {
+                document.getElementById(data.pseudo).setAttribute('cx',data.positionX);
+                document.getElementById(data.pseudo).setAttribute('cy',data.positionY);
+            })
+
+			socket.on('newEnemy',function(data)
+			{
+				var myCircle = document.createElementNS("http://www.w3.org/2000/svg","circle");
+				myCircle.setAttributeNS(null,"id",data.pseudo);
+				myCircle.setAttributeNS(null,"cx",data.X);
+				myCircle.setAttributeNS(null,"cy",data.Y);
+				myCircle.setAttributeNS(null,"r",data.r);
+				myCircle.setAttributeNS(null,"fill","green");
+				myCircle.setAttributeNS(null,"stroke","none");
+				document.getElementById("enemy").appendChild(myCircle);
+			})
+			
+			socket.on('mouvementEnemy',function(data)
+			{
+				var aux = document.getElementById(data.pseudo);
+				if(aux != undefined)
+				{
+					aux.setAttribute('cx',data.positionX);
+					aux.setAttribute('cy',data.positionY);
+					
+				}
+			})
+
+			socket.on('enemyKill',function(id)
+			{
+				var enemy = document.getElementById(id);
+				var pere = joueur.parentNode;
+				pere.removeChild(enemy);
+			})
+            //----------------------------------------------------------------------    
+            //-------------------------Listener-------------------------------------
+            //----------------------------------------------------------------------    
+
+
+            //Listener pour le déplacement
+            document.addEventListener('keyup',function(e)
+                {
+                    draw_me(e);
+                    socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
+					//console.log(document.getElementById('sssvg'));
+                },
+                false);
+
+
+            //Listener pour les missiles
+            sssvg.addEventListener('click',function(event)
+            {
+                tracer_ligne(event);
+                setTimeout(destroy,100);
+            })
+
+
+			//----------------------------------------------------------------------    
+            //-------------------------Function-------------------------------------
+            //---------------------------------------------------------------------- 
+
+
+            //Detruit les missiles
+            function destroy()
+            {
+                var parent = document.getElementById('missile');
+                console.log(parent);
+                var enfant = document.getElementById('missile').childNodes.item(1);
+                //var enfant = document.getElementById('missile').firstChild;
+                parent.removeChild(enfant);
+            }
+
+            //Trace la trajectoire des missiles
+            function tracer_ligne(event)
+            {
+                var sopX = event.pageX-10;
+                var sopY = event.pageY-10;
+                var pente = (positionY-sopY)/(positionX-sopX);
+                if(sopX>positionX)
+                {
+                    var a = (positionY-sopY)/(positionX-sopX);
+                    var b = positionY - positionX*a;
+                    var fin = a*1200+b;
+                    if(fin>1200)
+                    {
+                        sopY = 1200;
+                        sopX = (1200-b)/a;
+                    }
+                    else if(fin<0)
+                    {
+                        sopY=0;
+                        sopX = (0-b)/a;
+                    }
+                    else
+                    {
+                        sopX = 1200;
+                        sopY = (a*1200)+b;
+                    }
+
+                }
+                else if(sopX<positionX)
+                {
+                    var a = (positionY-sopY)/(positionX-sopX);
+                    var b = positionY - positionX*a;
+                    var fin = b;
+                    if(fin>1200)
+                    {
+                        sopY = 1200;
+                        sopX = (1200-b)/a;
+                    }
+                    else if(fin<0)
+                    {
+                        sopY=0;
+                        sopX = (0-b)/a;
+                    }
+                    else
+                    {
+                        sopX = 0;
+                        sopY = b;
+                    }
+                }
+                else if(sopX==positionX)
+                {
+                    if(positionY>sopY)
+                    {
+                        sopY=0;
+                    }
+                    else
+                    {
+                        sopY=1200;
+                    }
+                }
+                var ligne = document.createElementNS("http://www.w3.org/2000/svg", 'line');
+                ligne.setAttribute("x1", positionX);
+                ligne.setAttribute("y1", positionY);
+                ligne.setAttribute("x2", sopX);
+                ligne.setAttribute("y2", sopY);
+                ligne.setAttribute("stroke","black");
+                document.getElementById("missile").appendChild(ligne);
+                socket.emit('creationLigne',{x1 : positionX, y1 : positionY, x2 : sopX, y2 : sopY});
+				enemyTouche(positionX,positionY,sopX,sopY);
+            }
+
+
+            //Actualise la position du joueur en prenant en compte la collision entre les murs
+            function draw_me(e)
+            {
+
+                old_positionX = positionX;
+                old_positionY = positionY;
+                var pas = 10;
+                var longueur = tableau_block.length;
+                longueur = longueur/2;
+                var mouvementLegal;
+                mouvementLegal = 1;
+                if(e.keyCode===40)
+                {
+                    if(positionY<document.getElementById('sssvg').getAttributeNS(null,'width'))
+                    {
+                        for (var i = 0; i < tableau_block.length; i++) 
+                        {
+                            if(positionX-20<=tableau_block[2*i]&&positionX+20>=tableau_block[2*i]&&positionY+pas-20<=tableau_block[2*i+1]&&positionY+20+pas>=tableau_block[2*i+1])
+                            {
+                                mouvementLegal = 0;
+                            }
+                            
+                        };
+                        if(Boolean(mouvementLegal))
+                        {
+                            positionY = positionY + pas;
+                            
+                            
+                        }
+                        
+                    }
+                    
+                }
+                else if(e.keyCode===39)
+                {
+                    if(positionX<document.getElementById('sssvg').getAttributeNS(null,'height'))
+                    {
+                        for (var i = 0; i < tableau_block.length; i++) 
+                        {
+                            if(positionX+pas-20<=tableau_block[2*i]&&positionX+20+pas>=tableau_block[2*i]&&positionY-20<=tableau_block[2*i+1]&&positionY+20>=tableau_block[2*i+1])
+                            {
+                                mouvementLegal = 0;
+                            }
+                        };
+                        if(Boolean(mouvementLegal))
+                        {
+                            positionX = positionX + pas;
+                        }
+                        
+                    }
+                }
+                else if(e.keyCode===38)
+                {
+                    if(positionY>0)
+                    {
+                        for (var i = 0; i < tableau_block.length; i++) 
+                        {
+                            if(positionX-20<=tableau_block[2*i]&&positionX+20>=tableau_block[2*i]&&positionY-pas-20<=tableau_block[2*i+1]&&positionY-pas+20>=tableau_block[2*i+1])
+                            {
+                                mouvementLegal = 0;
+                            }
+                        };
+                        if(Boolean(mouvementLegal))
+                        {
+                            positionY = positionY - pas;
+                        }
+                    }
+                }
+                else if(e.keyCode===37)
+                {
+                    if(positionX>0)
+                    {
+                        for (var i = 0; i < tableau_block.length; i++) 
+                        {
+                            if(positionX-pas-20<=tableau_block[2*i]&&positionX+20-pas>=tableau_block[2*i]&&positionY-20<=tableau_block[2*i+1]&&positionY+20>=tableau_block[2*i+1])
+                            {
+                                mouvementLegal = 0;
+                            }
+                        };
+                        if(Boolean(mouvementLegal))
+                        {
+                            positionX = positionX - pas;
+                        }
+                    }
+                }
+                document.getElementById(pseudo).setAttribute('cx',positionX);
+                document.getElementById(pseudo).setAttribute('cy',positionY);
+            }
+        
+			function enemyTouche(x1,y1,x2,y2)
+			{
+				var listEnemy = document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle');
+				var pente = (y2-y1)/(x2-x1);
+				console.log("pente "+pente);
+				var reste = (y1-pente*x1);
+				console.log("reste "+reste);
+				var j =-1;
+				var dist = 1000000000;
+				for(var i = 0; i<listEnemy.length; i++)
+				{
+					if((x2-x1)*(parseInt(listEnemy.item(i).getAttributeNS(null,'cx'))-x1)>=0&&(y2-y1)*(parseInt(listEnemy.item(i).getAttributeNS(null,'cy'))-y1)>=0)
+					{
+						var X=parseInt(listEnemy.item(i).getAttributeNS(null,'cx'))
+						var Y=parseInt(listEnemy.item(i).getAttributeNS(null,'cy'))
+						var distance = (-pente*X+Y-reste)*(-pente*X+Y-reste)/(pente*pente+1);
+						console.log("X "+X);
+						console.log("Y "+Y);
+						console.log("distance "+distance);
+						console.log("taille "+listEnemy.item(i).getAttributeNS(null,'r'));
+						if(distance<=listEnemy.item(i).getAttributeNS(null,'r')*listEnemy.item(i).getAttributeNS(null,'r'))
+						{
+							if(dist>(listEnemy.item(i).getAttributeNS(null,'cx')-positionX)*(listEnemy.item(i).getAttributeNS(null,'cx')-positionX)+(listEnemy.item(i).getAttributeNS(null,'cy')-positionY)*(listEnemy.item(i).getAttributeNS(null,'cy')-positionY))
+							{
+								j=i;
+								dist=(listEnemy.item(i).getAttributeNS(null,'cx')-positionX)*(listEnemy.item(i).getAttributeNS(null,'cx')-positionX)+(listEnemy.item(i).getAttributeNS(null,'cy')-positionY)*(listEnemy.item(i).getAttributeNS(null,'cy')-positionY);
+							}
+							
+						}
+					}
+				}
+				if(j!=-1)
+				{
+					socket.emit('killEnemy',listEnemy.item(j).getAttributeNS(null,'id'));
+					var pere = listEnemy.item(j).parentNode;
+					pere.removeChild(listEnemy.item(j));
+				}
+			}
+			
+			function mouvementEnemy()
+			{
+				var listEnemy = document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle');
+				var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
+				for(var i=0; i<listEnemy.length; i++)
+				{
+					var min = 0;
+					var distance = (listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(0).getAttributeNS(null,"cx"))*(listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(0).getAttributeNS(null,"cx"))+(listPlayer.item(0).getAttributeNS(null,"cy")-listEnemy.item(i).getAttributeNS(null,"cy"))*(listPlayer.item(0).getAttributeNS(null,"cy")-listEnemy.item(i).getAttributeNS(null,"cy"));
+					for(var j = 1; j<listPlayer.length; j++)
+					{
+						var aux = (listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(j).getAttributeNS(null,"cx"))*(listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(j).getAttributeNS(null,"cx"))+(listEnemy.item(i).getAttributeNS(null,"cy")-listPlayer.item(j).getAttributeNS(null,"cy"))*(listEnemy.item(i).getAttributeNS(null,"cy")-listPlayer.item(j).getAttributeNS(null,"cy"));
+						if(distance>aux)
+						{
+							distance=aux;
+							min = j;
+						}
+					}
+					var total = Math.abs(parseInt(listPlayer.item(min).getAttributeNS(null,"cx"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cx")))+Math.abs(parseInt(listPlayer.item(min).getAttributeNS(null,"cy"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cy")));
+					if(total<=8)
+					{
+						listEnemy.item(i).setAttributeNS(null,"cx",parseInt(listPlayer.item(min).getAttributeNS(null,"cx")));
+						listEnemy.item(i).setAttributeNS(null,"cy",parseInt(listPlayer.item(min).getAttributeNS(null,"cy")));
+					}
+					else
+					{
+						listEnemy.item(i).setAttributeNS(null,"cx",(parseInt(listPlayer.item(min).getAttributeNS(null,"cx"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cx")))*nombrePixel/total+parseInt(listEnemy.item(i).getAttributeNS(null,"cx")));
+						listEnemy.item(i).setAttributeNS(null,"cy",(parseInt(listPlayer.item(min).getAttributeNS(null,"cy"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cy")))*nombrePixel/total+parseInt(listEnemy.item(i).getAttributeNS(null,"cy")));
+					}
+					socket.emit('mouvementEnemy',{pseudo : listEnemy.item(i).getAttributeNS(null,'id'),positionX : listEnemy.item(i).getAttributeNS(null,'cx'), positionY : listEnemy.item(i).getAttributeNS(null,'cy')});
+				}
+			}
+			
+			
+			function newEnemy()
+			{
+				var myCircle = document.createElementNS("http://www.w3.org/2000/svg","circle");
+				if(document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle').length==0)
+				{
+					myCircle.setAttributeNS(null,"id",0);
+
+				}
+				else
+				{
+					myCircle.setAttributeNS(null,"id",parseInt(document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle')[document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle').length-1].getAttributeNS(null,'id'))+1);
+				}
+				myCircle.setAttributeNS(null,"cx",100);
+				myCircle.setAttributeNS(null,"cy",100);
+				myCircle.setAttributeNS(null,"r",10);
+				myCircle.setAttributeNS(null,"fill","green");
+				myCircle.setAttributeNS(null,"stroke","none");
+				document.getElementById("enemy").appendChild(myCircle);
+				socket.emit('newEnemy',{X : myCircle.getAttributeNS(null,"cx"),Y: myCircle.getAttributeNS(null,"cy"),r: myCircle.getAttributeNS(null,"r"), pseudo : myCircle.getAttributeNS(null,"id")});
+			}
+			
+					
+		</script>
+    </body>
+</html>
+
