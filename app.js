@@ -87,6 +87,11 @@ io.sockets.on('connection', function (socket, pseudo) {
 		}
 	})
 	
+	socket.on('nextLevel',function()
+	{
+		socket.broadcast.emit('nextLevel');
+	})
+	
 	socket.on('pret',function()
 	{
 		pret=pret+1;
