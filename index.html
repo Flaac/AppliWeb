@@ -49,13 +49,14 @@
                     <li id="nbco">Nombres de joueurs connectés :</li>
                     <li id="nbfrag">Nombres de frags : 0</li>
                     <li id="life">Vie : 100/100</li>
-                    <li id="nbvag">Vague : </li>
-                    <li>Vagues numéro</li>
-                    <li>Vagues numéro</li>
+                    <li id="nbvag">Vague : 1</li>
+                    <li id="nbmis">Nombre de missiles tirés : 0</li>
+                    <li id="nbpts">Nombre de points : 0</li>
                     <li>Vagues numéro</li>
 
             </lu>
             <p><input type="button" value="pret a commencer" id="poke" /></p>
+            <p><input type="button" value="de la vie !" id="soin" /></p>
         </div>
         <div id = "nbconnect"><p> " " </p></div>
 
@@ -89,8 +90,10 @@
             var dmc_left = null;
             var dmc_right = null;
             var tableau_player = new Array();
-            var nb_personne_connectees;
+            var nb_personne_connectees = 0;
             var nb_kill_enemy = 0;
+            var nb_missiles = 0;
+            var nb_points = 0;
             var est_mort = 0;
             var nombrePixel = 5;
             var svgNS = "http://www.w3.org/2000/svg";
@@ -101,6 +104,16 @@
 
             $('#poke').click(function () {
                 socket.emit('pret');
+            })
+
+            $('#soin').click(function()
+            {
+                if(nb_points>=1000&&vie<100&&vie>0)
+                {
+                    nb_points = nb_points - 1000;
+                    vie = vie + 20;
+                }
+                refresh_enemy();
             })
 
             socket.on('nb_connect',function(nb_personne)
@@ -132,6 +145,7 @@
             socket.on('start',function()
             {
                 niveau=1;
+                nb_missiles=0;
                 if(masterChief==pseudo)
                 {
                     dmc_mouv = setInterval(mouvementEnemy,50);
@@ -301,6 +315,8 @@
                 {
                     tracer_ligne(event);
                     setTimeout(destroy,50);
+                    nb_missiles++;
+                    document.getElementById('nbmis').innerHTML = "Nombre de missiles tirés : "+nb_missiles;
                 }
                 
             })
@@ -313,6 +329,8 @@
             function refresh_enemy()
             {
                 document.getElementById('nbfrag').innerHTML = "Nombre de frags : "+nb_kill_enemy;
+                document.getElementById('nbpts').innerHTML = "Nombre de points : "+nb_points;
+                document.getElementById('life').innerHTML = "Vie : "+vie+"/100";
             }
 
             function refresh_connect()
@@ -324,9 +342,7 @@
             function destroy()
             {
                 var parent = document.getElementById('missile');
-                console.log(parent);
                 var enfant = document.getElementById('missile').childNodes.item(1);
-                //var enfant = document.getElementById('missile').firstChild;
                 parent.removeChild(enfant);
             }
 
@@ -404,7 +420,8 @@
             function degat()
             {
                 vie=vie-10;
-                document.getElementById('life').innerHTML = "Vie : "+vie+"/100";
+                refresh_enemy();
+                
                 if(vie==0)
                 {
                     socket.emit('mort',pseudo);
@@ -566,6 +583,7 @@
                 {
                     socket.emit('enemyKill',listEnemy.item(j).getAttributeNS(null,'id'));
                     nb_kill_enemy++;
+                    nb_points+=100;
                     refresh_enemy();
                     var pere = listEnemy.item(j).parentNode;
                     pere.removeChild(listEnemy.item(j));
@@ -615,6 +633,7 @@
             {
                 var myCircle = document.createElementNS("http://www.w3.org/2000/svg","circle");
                 count = count+1;
+
 				if(document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle').length==0)
                 {
                     myCircle.setAttributeNS(null,"id",0);
@@ -673,17 +692,18 @@
 			function nextLevel()
 			{
 				niveau=niveau+1;
+                document.getElementById('nbvag').innerHTML = "Vague : "+niveau;
 				socket.on('nextLevel');
 				var aux = 1000;
+                count=0;
 				for(var i=2; i<=niveau; i++)
 				{
 					aux = aux-1000/(i*i);
 				}
-				nombrePixel=nombrePixel+1;
+				nombrePixel=nombrePixel+2;
 				dmc_create=setInterval(newEnemy,aux);
 			}
-            
-                    
+             
         </script>
     </body>
 </html>
