@@ -7,6 +7,7 @@ var app = require('express')(),
 var tableau_missile = new Array();
 var tableau_player_ID = new Array();
 var tableau_player_coord = new Array();
+var pret = 0;
 var nb_personnes = 0;
 var masterChief =  " ";
 
@@ -16,7 +17,7 @@ app.get('/', function (req, res) {
 });
 
 io.sockets.on('connection', function (socket, pseudo) {
-
+	
 
     // Dès qu'on nous donne un pseudo, on le stocke en variable de session et on informe les autres personnes
     socket.on('nouveau_client', function(pseudo) {
@@ -86,6 +87,15 @@ io.sockets.on('connection', function (socket, pseudo) {
 		}
 	})
 	
+	socket.on('pret',function()
+	{
+		pret=pret+1;
+		if(pret==tableau_player_ID.length)
+		{
+			socket.emit('start');
+			socket.broadcast.emit('start');
+		}
+	})
 	// Gere tous les missiles
     // Ici on les stocke (indispensable ?)
     socket.on('creationLigne',function(data)
