@@ -17,36 +17,36 @@ app.get('/', function (req, res) {
 });
 
 io.sockets.on('connection', function (socket, pseudo) {
-	
+    
 
     // Dès qu'on nous donne un pseudo, on le stocke en variable de session et on informe les autres personnes
     socket.on('nouveau_client', function(pseudo) {
+        nb_personnes++;
         pseudo = ent.encode(pseudo);
         socket.pseudo = pseudo;
-		if(masterChief==" ")
-		{
-			masterChief=pseudo;
-			console.log("new masterChief !! "+pseudo);
-			socket.emit('newMasterChief',masterChief);
-			socket.broadcast.emit('newMasterChief',masterChief);
-		}
-		socket.broadcast.emit('nouveau_client', pseudo);
+        if(masterChief==" ")
+        {
+            masterChief=pseudo;
+            console.log("new masterChief !! "+pseudo);
+            socket.emit('newMasterChief',masterChief);
+            socket.broadcast.emit('newMasterChief',masterChief);
+        }
+        socket.broadcast.emit('nouveau_client', pseudo);
         tableau_player_ID.push(pseudo);
         tableau_player_coord.push(50);
         tableau_player_coord.push(50);
-        nb_personnes = nb_personnes +1;
-		
+        
         socket.emit('nb_connect',nb_personnes);
         console.log(pseudo+" est connecté !");
-		for(var i = 0; i < tableau_player_ID.length-1; i++) 
-		{
-			socket.emit('autre_joueur',{pseudo : tableau_player_ID[i], X : tableau_player_coord[2*i], Y : tableau_player_coord[2*i+1]});
-		}
-		
+        for(var i = 0; i < tableau_player_ID.length-1; i++) 
+        {
+            socket.emit('autre_joueur',{pseudo : tableau_player_ID[i], X : tableau_player_coord[2*i], Y : tableau_player_coord[2*i+1]});
+        }
+        
 
     })
 
-	socket.on('position', function(data)
+    socket.on('position', function(data)
     {
         for (var i = 0; i < tableau_player_ID.length; i++) 
         {
@@ -59,49 +59,44 @@ io.sockets.on('connection', function (socket, pseudo) {
         socket.broadcast.emit('position',data);
     })
 
-	socket.on('newEnemy',function(data)
-	{
-		socket.broadcast.emit('newEnemy',data);
-	})
-	
-	socket.on('mort',function(pseudo)
-	{
-		socket.broadcast.emit('mort',pseudo);
-		for (var i = 0; i < tableau_player_ID.length; i++) 
+    socket.on('newEnemy',function(data)
+    {
+        socket.broadcast.emit('newEnemy',data);
+    })
+    
+    socket.on('mort',function(pseudo)
+    {
+        socket.broadcast.emit('mort',pseudo);
+        for (var i = 0; i < tableau_player_ID.length; i++) 
         {
             if(tableau_player_ID[i]==socket.pseudo)
             {
-				tableau_player_ID.splice(i,1);
+                tableau_player_ID.splice(i,1);
                 tableau_player_coord.splice(2*i,2);
             }
         }
-		if(socket.pseudo==masterChief&&tableau_player_ID.length>0)
-		{
-			console.log("changement masterChief");
-			masterChief=tableau_player_ID[0];
-			socket.broadcast.emit('newMasterChief',masterChief);
-		}else{
-			console.log("y'a personne!!");
-			masterChief=" ";
-			socket.broadcast.emit('newMasterChief',masterChief);
-		}
-	})
-	
-	socket.on('nextLevel',function()
-	{
-		socket.broadcast.emit('nextLevel');
-	})
-	
-	socket.on('pret',function()
-	{
-		pret=pret+1;
-		if(pret==tableau_player_ID.length)
-		{
-			socket.emit('start');
-			socket.broadcast.emit('start');
-		}
-	})
-	// Gere tous les missiles
+        if(socket.pseudo==masterChief&&tableau_player_ID.length>0)
+        {
+            console.log("changement masterChief");
+            masterChief=tableau_player_ID[0];
+            socket.broadcast.emit('newMasterChief',masterChief);
+        }else{
+            console.log("y'a personne!!");
+            masterChief=" ";
+            socket.broadcast.emit('newMasterChief',masterChief);
+        }
+    })
+    
+    socket.on('pret',function()
+    {
+        pret=pret+1;
+        if(pret==tableau_player_ID.length)
+        {
+            socket.emit('start');
+            socket.broadcast.emit('start');
+        }
+    })
+    // Gere tous les missiles
     // Ici on les stocke (indispensable ?)
     socket.on('creationLigne',function(data)
     {
@@ -117,41 +112,41 @@ io.sockets.on('connection', function (socket, pseudo) {
         },100);
 
     })
-	
-	socket.on('disconnect',function(data)
+    
+    socket.on('disconnect',function(data)
     {
         console.log("Un client de moins !"+ socket.pseudo);
-		for (var i = 0; i < tableau_player_ID.length; i++) 
+        for (var i = 0; i < tableau_player_ID.length; i++) 
         {
             if(tableau_player_ID[i]==socket.pseudo)
             {
-				tableau_player_ID.splice(i,1);
+                tableau_player_ID.splice(i,1);
                 tableau_player_coord.splice(2*i,2);
             }
         }
-		if(socket.pseudo==masterChief&&tableau_player_ID.length>0)
-		{
-			masterChief=tableau_player_ID[0];
-			socket.broadcast.emit('newMasterChief',masterChief);
-		}else{
-			masterChief=" ";
-			socket.broadcast.emit('newMasterChief',masterChief);
-		}
-		socket.broadcast.emit('mort_joueur',socket.pseudo);
-		console.log(tableau_player_ID);
+        if(socket.pseudo==masterChief&&tableau_player_ID.length>0)
+        {
+            masterChief=tableau_player_ID[0];
+            socket.broadcast.emit('newMasterChief',masterChief);
+        }else{
+            masterChief=" ";
+            socket.broadcast.emit('newMasterChief',masterChief);
+        }
+        socket.broadcast.emit('mort_joueur',socket.pseudo);
+        console.log(tableau_player_ID);
         nb_personnes = nb_personnes - 1;
         socket.emit('nb_connect', nb_personnes);
     })
-	
-	socket.on('mouvementEnemy',function(data)
-	{
-		socket.broadcast.emit('mouvementEnemy',data);
-	})
-	
-	socket.on('enemyKill',function(id)
-	{
-		socket.broadcast.emit('enemyKill',id);
-	})
+    
+    socket.on('mouvementEnemy',function(data)
+    {
+        socket.broadcast.emit('mouvementEnemy',data);
+    })
+    
+    socket.on('enemyKill',function(id)
+    {
+        socket.broadcast.emit('enemyKill',id);
+    })
 });
 
 server.listen(8080);
