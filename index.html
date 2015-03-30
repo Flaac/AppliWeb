@@ -80,6 +80,7 @@
             var positionY = 50;
             var vie = 100;
             var niveau = 0;
+			var count = 0;
             var masterChief = " ";
             var dmc_mouv = null;
             var dmc_create = null;
@@ -172,9 +173,14 @@
                 nb_personne_connectees--;
                 refresh_connect();
             })
+			
+			socket.on('nextLevel',function()
+			{
+				niveau=niveau+1;
+				nombrePixel=nombrePixel+1;
+			})
 
-
-            socket.on('position',function(data)
+			socket.on('position',function(data)
             {
                 document.getElementById(data.pseudo).setAttribute('cx',data.positionX);
                 document.getElementById(data.pseudo).setAttribute('cy',data.positionY);
@@ -190,6 +196,7 @@
                 myCircle.setAttributeNS(null,"fill","green");
                 myCircle.setAttributeNS(null,"stroke","none");
                 document.getElementById("enemy").appendChild(myCircle);
+				count=count+1;
             })
             
             socket.on('mouvementEnemy',function(data)
@@ -607,7 +614,8 @@
             function newEnemy()
             {
                 var myCircle = document.createElementNS("http://www.w3.org/2000/svg","circle");
-                if(document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle').length==0)
+                count = count+1;
+				if(document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle').length==0)
                 {
                     myCircle.setAttributeNS(null,"id",0);
 
@@ -653,9 +661,27 @@
                     myCircle.setAttributeNS(null,"stroke","none");
                     document.getElementById("enemy").appendChild(myCircle);
                 }
-                
+                if(count==10+50*niveau)
+				{
+					clearInterval(dmc_create);
+					dmc_create=null;
+					dmc_create=setTimeout(nextLevel,30000);
+				}
                 socket.emit('newEnemy',{X : myCircle.getAttributeNS(null,"cx"),Y: myCircle.getAttributeNS(null,"cy"),r: myCircle.getAttributeNS(null,"r"), pseudo : myCircle.getAttributeNS(null,"id")});
             }
+			
+			function nextLevel()
+			{
+				niveau=niveau+1;
+				socket.on('nextLevel');
+				var aux = 1000;
+				for(var i=2; i<=niveau; i++)
+				{
+					aux = aux-1000/(i*i);
+				}
+				nombrePixel=nombrePixel+1;
+				dmc_create=setInterval(newEnemy,aux);
+			}
             
                     
         </script>
