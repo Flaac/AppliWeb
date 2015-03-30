@@ -3,6 +3,8 @@ var app = require('express')(),
     io = require('socket.io').listen(server),
     ent = require('ent'), // Permet de bloquer les caractères HTML (sécurité équivalente à htmlentities en PHP)
     fs = require('fs');
+var cors = require('cors');
+app.use(cors())
 
 var tableau_missile = new Array();
 var tableau_player_ID = new Array();
