@@ -4,7 +4,8 @@ var app = require('express')(),
     ent = require('ent'), // Permet de bloquer les caractères HTML (sécurité équivalente à htmlentities en PHP)
     fs = require('fs');
 var cors = require('cors');
-app.use(cors())
+app.use(cors());
+
 
 var tableau_missile = new Array();
 var tableau_player_name = new Array();
@@ -14,6 +15,17 @@ var tableau_player_coord = new Array();
 var commencer = 0;
 var nb_personnes = 0;
 var masterChief =  " ";
+
+var allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+	next();
+};
+
+app.configure(function() {
+    app.use(allowCrossDomain);
+});
 
 // Chargement de la page index.html
 app.get('/', function (req, res) {
@@ -41,7 +53,7 @@ io.sockets.on('connection', function (socket, pseudo) {
             socket.emit('autre_joueur',{pseudo : tableau_player_ID[i], X : tableau_player_coord[2*i], Y : tableau_player_coord[2*i+1]});
         }
         tableau_player_ID.push(pseudo);
-        tableau_player_name.push(pseudo_off);
+        tableau_player_name.push(data.pseudo_off);
 		tableau_player_pret.push(0);
         tableau_player_coord.push(data.X);
         tableau_player_coord.push(data.Y);

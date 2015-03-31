@@ -5,7 +5,7 @@
 <html>
     <head>
         <meta charset="utf-8" />
-        <title>Yo bitch !</title>
+        <title>App Web</title>
         <style>
         h1
         {
@@ -34,7 +34,7 @@
         
         <!-- Mettre une classe spécifique nommé other sur les cercle représentant les autres joueurs -->
         <div id="gauche">
-            <svg id="sssvg" width="1000" height="1000" style="border: 1px solid #000000;">
+            <svg id="sssvg" width="1000" height="700" style="border: 1px solid #000000;">
                 <g id="missile">
                 </g>
                 <g id="joueur">
@@ -66,7 +66,7 @@
         <script>
 
             // Connexion à socket.io
-            var socket = io.connect('http://localhost:8080');
+            var socket = io();
             var ts = Math.round((new Date()).getTime());
             ts = ts % 1427000000000;
             // On demande le pseudo, on l'envoie au serveur et on l'affiche dans le titre
@@ -266,21 +266,27 @@
                     {
                         if(e.keyCode===40&&dmc_down==null)
                         {
-							console.log(1);
-                            dmc_down=setInterval(go_down,50);
+							dmc_down=setInterval(go_down,50);
+							clearInterval(dmc_up);
+							dmc_up=null;
                         }
                         else if(e.keyCode===39&&dmc_right==null)
                         {
-							console.log(1);
-                            dmc_right=setInterval(go_right,50);
+							dmc_right=setInterval(go_right,50);
+							clearInterval(dmc_left);
+							dmc_left=null;
                         }
                         else if(e.keyCode===38&&dmc_up==null)
                         {
                             dmc_up=setInterval(go_up,50);
+							clearInterval(dmc_down);
+							dmc_down=null;
                         }
                         else if(e.keyCode===37&&dmc_left==null)
                         {
                             dmc_left=setInterval(go_left,50);
+							clearInterval(dmc_right);
+							dmc_right=null;
                         }
                         socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
                     }
@@ -469,6 +475,11 @@
                         positionY = positionY - pas;
                     }
                 }
+				else
+				{
+					clearInterval(dmc_up);
+                    dmc_up=null;
+				}
                 document.getElementById(pseudo).setAttribute('cx',positionX);
                 document.getElementById(pseudo).setAttribute('cy',positionY);
                 socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
@@ -483,7 +494,7 @@
                 mouvementLegal = 1;
 				console.log(positionY);
 				console.log(document.getElementById('sssvg').getAttributeNS(null,'width'));
-                if(positionY<parseInt(document.getElementById('sssvg').getAttributeNS(null,'width')))
+                if(positionY<parseInt(document.getElementById('sssvg').getAttributeNS(null,'height')))
                 {
 					console.log(2);
                     var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
@@ -502,6 +513,11 @@
                     }
                     
                 }
+				else
+				{
+					clearInterval(dmc_down);
+                    dmc_down=null;
+				}
                 document.getElementById(pseudo).setAttribute('cx',positionX);
                 document.getElementById(pseudo).setAttribute('cy',positionY);
                 socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
@@ -531,6 +547,11 @@
                         positionX = positionX - pas;
                     }
                 }
+				else
+				{
+					clearInterval(dmc_left);
+                    dmc_left=null;
+				}
                 document.getElementById(pseudo).setAttribute('cx',positionX);
                 document.getElementById(pseudo).setAttribute('cy',positionY);
                 socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
@@ -543,7 +564,7 @@
                 var pas = 10;
                 var mouvementLegal;
                 mouvementLegal = 1;
-                if(positionX<parseInt(document.getElementById('sssvg').getAttributeNS(null,'height')))
+                if(positionX<parseInt(document.getElementById('sssvg').getAttributeNS(null,'width')))
                 {
                     var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
                     for (var i = 0; i < listPlayer.length; i++) 
@@ -561,6 +582,11 @@
                     }
                     
                 }
+				else
+				{
+					clearInterval(dmc_right);
+                    dmc_right=null;
+				}
                 document.getElementById(pseudo).setAttribute('cx',positionX);
                 document.getElementById(pseudo).setAttribute('cy',positionY);
                 socket.emit('position',{pseudo : pseudo,positionX : positionX, positionY : positionY});
