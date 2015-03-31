@@ -67,6 +67,7 @@
 
             // Connexion à socket.io
             var socket = io();
+			var commencer = 0;
             var ts = Math.round((new Date()).getTime());
             ts = ts % 1427000000000;
             // On demande le pseudo, on l'envoie au serveur et on l'affiche dans le titre
@@ -89,6 +90,7 @@
             var niveau = 1;
 			var count = 0;
             var masterChief = " ";
+			var nbJoueur = 1;
             var dmc_mouv = null;
             var dmc_create = null;
             var dmc_up = null;
@@ -129,6 +131,17 @@
                 refresh_connect();
             })
 
+			socket.on('joueur',function(comm)
+			{
+				commencer=comm;
+				if(commencer==1)
+				{
+					var enemy = document.getElementById(pseudo);
+					var pere = enemy.parentNode;
+					pere.removeChild(enemy);
+				}
+				
+			})
             // Gere les missiles des autes joueurs
             socket.on('creationLigne',function(data)
             {
@@ -149,8 +162,9 @@
                 console.log(masterChief+"et"+pseudo);
             })
 
-            socket.on('start',function()
+            socket.on('start',function(nombre)
             {
+				nbJoueur = nombre;
 				if(niveau==1&&count==0)
 				{
 					nb_missiles=0;
@@ -262,7 +276,7 @@
             //Listener pour le déplacement
             document.addEventListener('keydown',function(e)
                 {
-                    if(Boolean(est_mort)===false)
+                    if(Boolean(est_mort)===false&&commencer==0)
                     {
                         if(e.keyCode===40&&dmc_down==null)
                         {
@@ -328,7 +342,7 @@
             //Listener pour les missiles
             sssvg.addEventListener('mousedown',function(event)
             {
-                if(Boolean(est_mort)===false)
+                if(Boolean(est_mort)===false&&commencer==0)
                 {
                     tracer_ligne(event);
                     setTimeout(destroy,50);
@@ -685,7 +699,7 @@
                 if(randomVar==1)
                 {
                     myCircle.setAttributeNS(null,"cx",-10);
-                    myCircle.setAttributeNS(null,"cy",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'width')) ));
+                    myCircle.setAttributeNS(null,"cy",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'height')) ));
                     myCircle.setAttributeNS(null,"r",10);
                     myCircle.setAttributeNS(null,"fill","green");
                     myCircle.setAttributeNS(null,"stroke","none");
@@ -693,8 +707,8 @@
                 }
                 else if(randomVar==2)
                 {
-                    myCircle.setAttributeNS(null,"cx",parseInt(document.getElementById('sssvg').getAttributeNS(null,'height'))+10);
-                    myCircle.setAttributeNS(null,"cy",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'width')) ));
+                    myCircle.setAttributeNS(null,"cx",parseInt(document.getElementById('sssvg').getAttributeNS(null,'width'))+10);
+                    myCircle.setAttributeNS(null,"cy",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'height')) ));
                     myCircle.setAttributeNS(null,"r",10);
                     myCircle.setAttributeNS(null,"fill","green");
                     myCircle.setAttributeNS(null,"stroke","none");
@@ -702,7 +716,7 @@
                 }
                 else if(randomVar==3)
                 {
-                    myCircle.setAttributeNS(null,"cx",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'height')) ));
+                    myCircle.setAttributeNS(null,"cx",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'width')) ));
                     myCircle.setAttributeNS(null,"cy",-10);
                     myCircle.setAttributeNS(null,"r",10);
                     myCircle.setAttributeNS(null,"fill","green");
@@ -711,14 +725,14 @@
                 }
                 else
                 {
-                    myCircle.setAttributeNS(null,"cx",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'height')) ));
-                    myCircle.setAttributeNS(null,"cy",parseInt(document.getElementById('sssvg').getAttributeNS(null,'width'))+10);
+                    myCircle.setAttributeNS(null,"cx",Math.floor((Math.random() * document.getElementById('sssvg').getAttributeNS(null,'width')) ));
+                    myCircle.setAttributeNS(null,"cy",parseInt(document.getElementById('sssvg').getAttributeNS(null,'height'))+10);
                     myCircle.setAttributeNS(null,"r",10);
                     myCircle.setAttributeNS(null,"fill","green");
                     myCircle.setAttributeNS(null,"stroke","none");
                     document.getElementById("enemy").appendChild(myCircle);
                 }
-                if(count==10+50*niveau)
+                if(count==50*niveau*nbJoueur)
 				{
 					clearInterval(dmc_create);
 					dmc_create=null;
@@ -739,7 +753,7 @@
 					aux = aux-1000/(i*i);
 				}
 				nombrePixel=nombrePixel+2;
-				dmc_create=setInterval(newEnemy,aux);
+				dmc_create=setInterval(newEnemy,aux/nbJoueur);
 			}
              
         </script>

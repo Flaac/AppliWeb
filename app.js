@@ -37,8 +37,7 @@ io.sockets.on('connection', function (socket, pseudo) {
 
     // Dès qu'on nous donne un pseudo, on le stocke en variable de session et on informe les autres personnes
     socket.on('nouveau_client', function(data) {
-        nb_personnes++;
-        pseudo = ent.encode(data.pseudo);
+		pseudo = ent.encode(data.pseudo);
         socket.pseudo = data.pseudo;
 		if(masterChief==" ")
         {
@@ -47,17 +46,22 @@ io.sockets.on('connection', function (socket, pseudo) {
             socket.emit('newMasterChief',masterChief);
             socket.broadcast.emit('newMasterChief',masterChief);
         }
-        socket.broadcast.emit('nouveau_client', data);
+        
 		for(var i = 0; i < tableau_player_ID.length; i++) 
         {
             socket.emit('autre_joueur',{pseudo : tableau_player_ID[i], X : tableau_player_coord[2*i], Y : tableau_player_coord[2*i+1]});
         }
-        tableau_player_ID.push(pseudo);
-        tableau_player_name.push(data.pseudo_off);
-		tableau_player_pret.push(0);
-        tableau_player_coord.push(data.X);
-        tableau_player_coord.push(data.Y);
-        
+        if(commencer==0)
+		{
+			nb_personnes++;
+			socket.broadcast.emit('nouveau_client', data);
+			tableau_player_ID.push(pseudo);
+			tableau_player_name.push(data.pseudo_off);
+			tableau_player_pret.push(0);
+			tableau_player_coord.push(data.X);
+			tableau_player_coord.push(data.Y);
+		}
+        socket.emit('joueur',commencer);
         socket.emit('nb_connect',nb_personnes);
         console.log(data.pseudo_off+" est connecté !");
     })
@@ -88,7 +92,7 @@ io.sockets.on('connection', function (socket, pseudo) {
             if(tableau_player_ID[i]==socket.pseudo)
             {
                 tableau_player_ID.splice(i,1);
-                tableau_player_name.splice(i,1);
+				tableau_player_name.splice(i,1);
                 tableau_player_coord.splice(2*i,2);
             }
         }
@@ -124,8 +128,8 @@ io.sockets.on('connection', function (socket, pseudo) {
 		if(somme==tableau_player_ID.length)
 		{
 			commencer = 1;
-			socket.emit('start');
-			socket.broadcast.emit('start');
+			socket.emit('start',tableau_player_name.length);
+			socket.broadcast.emit('start',tableau_player_name.length);
 		}
     })
     // Gere tous les missiles
@@ -153,6 +157,7 @@ io.sockets.on('connection', function (socket, pseudo) {
             if(tableau_player_ID[i]==socket.pseudo)
             {
                 tableau_player_ID.splice(i,1);
+				tableau_player_name.splice(i,1);
                 tableau_player_coord.splice(2*i,2);
             }
         }
