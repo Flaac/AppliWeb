@@ -67,12 +67,18 @@
 
             // Connexion à socket.io
             var socket = io.connect('http://localhost:8080');
-            
+            var ts = Math.round((new Date()).getTime());
+            ts = ts % 1427000000000;
             // On demande le pseudo, on l'envoie au serveur et on l'affiche dans le titre
-            var pseudo = prompt('Quel est votre pseudo ?');
+            pseudo = ts.toString();
+            var pseudo_off = prompt('Quel est votre pseudo ?');
+            if(pseudo_off===null||pseudo_off===" "||pseudo_off==="")
+            {
+                pseudo_off = ts.toString();
+            }
             $('#sssvg').find('circle').attr('id',pseudo);
-            socket.emit('nouveau_client', {pseudo : pseudo, X : parseInt(document.getElementById(pseudo).getAttributeNS(null,'cx')), Y : parseInt(document.getElementById(pseudo).getAttributeNS(null,'cy'))});
-			document.title = pseudo+' - '+ document.title;
+            socket.emit('nouveau_client', {pseudo_off : pseudo_off, pseudo : pseudo, X : parseInt(document.getElementById(pseudo).getAttributeNS(null,'cx')), Y : parseInt(document.getElementById(pseudo).getAttributeNS(null,'cy'))});
+			document.title = pseudo_off+' - '+ document.title;
             
 
             //Initialization 
@@ -109,7 +115,7 @@
 
             $('#soin').click(function()
             {
-                if(nb_points>=1000&&vie<100&&vie>0)
+                if(nb_points>=1000&&vie<81&&vie>0)
                 {
                     nb_points = nb_points - 1000;
                     vie = vie + 20;

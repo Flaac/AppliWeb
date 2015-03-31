@@ -7,6 +7,7 @@ var cors = require('cors');
 app.use(cors())
 
 var tableau_missile = new Array();
+var tableau_player_name = new Array();
 var tableau_player_ID = new Array();
 var tableau_player_pret = new Array();
 var tableau_player_coord = new Array();
@@ -30,7 +31,7 @@ io.sockets.on('connection', function (socket, pseudo) {
 		if(masterChief==" ")
         {
             masterChief=data.pseudo;
-            console.log("new masterChief !! "+data.pseudo);
+            console.log("new masterChief !! "+data.pseudo_off);
             socket.emit('newMasterChief',masterChief);
             socket.broadcast.emit('newMasterChief',masterChief);
         }
@@ -40,12 +41,13 @@ io.sockets.on('connection', function (socket, pseudo) {
             socket.emit('autre_joueur',{pseudo : tableau_player_ID[i], X : tableau_player_coord[2*i], Y : tableau_player_coord[2*i+1]});
         }
         tableau_player_ID.push(pseudo);
+        tableau_player_name.push(pseudo_off);
 		tableau_player_pret.push(0);
         tableau_player_coord.push(data.X);
         tableau_player_coord.push(data.Y);
         
         socket.emit('nb_connect',nb_personnes);
-        console.log(pseudo+" est connecté !");
+        console.log(data.pseudo_off+" est connecté !");
     })
 
     socket.on('position', function(data)
@@ -74,6 +76,7 @@ io.sockets.on('connection', function (socket, pseudo) {
             if(tableau_player_ID[i]==socket.pseudo)
             {
                 tableau_player_ID.splice(i,1);
+                tableau_player_name.splice(i,1);
                 tableau_player_coord.splice(2*i,2);
             }
         }
