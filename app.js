@@ -8,8 +8,9 @@ app.use(cors())
 
 var tableau_missile = new Array();
 var tableau_player_ID = new Array();
+var tableau_player_pret = new Array();
 var tableau_player_coord = new Array();
-var pret = 0;
+var commencer = 0;
 var nb_personnes = 0;
 var masterChief =  " ";
 
@@ -22,30 +23,29 @@ io.sockets.on('connection', function (socket, pseudo) {
     
 
     // Dès qu'on nous donne un pseudo, on le stocke en variable de session et on informe les autres personnes
-    socket.on('nouveau_client', function(pseudo) {
+    socket.on('nouveau_client', function(data) {
         nb_personnes++;
-        pseudo = ent.encode(pseudo);
-        socket.pseudo = pseudo;
-        if(masterChief==" ")
+        pseudo = ent.encode(data.pseudo);
+        socket.pseudo = data.pseudo;
+		if(masterChief==" ")
         {
-            masterChief=pseudo;
-            console.log("new masterChief !! "+pseudo);
+            masterChief=data.pseudo;
+            console.log("new masterChief !! "+data.pseudo);
             socket.emit('newMasterChief',masterChief);
             socket.broadcast.emit('newMasterChief',masterChief);
         }
-        socket.broadcast.emit('nouveau_client', pseudo);
-        tableau_player_ID.push(pseudo);
-        tableau_player_coord.push(50);
-        tableau_player_coord.push(50);
-        
-        socket.emit('nb_connect',nb_personnes);
-        console.log(pseudo+" est connecté !");
-        for(var i = 0; i < tableau_player_ID.length-1; i++) 
+        socket.broadcast.emit('nouveau_client', data);
+		for(var i = 0; i < tableau_player_ID.length; i++) 
         {
             socket.emit('autre_joueur',{pseudo : tableau_player_ID[i], X : tableau_player_coord[2*i], Y : tableau_player_coord[2*i+1]});
         }
+        tableau_player_ID.push(pseudo);
+		tableau_player_pret.push(0);
+        tableau_player_coord.push(data.X);
+        tableau_player_coord.push(data.Y);
         
-
+        socket.emit('nb_connect',nb_personnes);
+        console.log(pseudo+" est connecté !");
     })
 
     socket.on('position', function(data)
@@ -82,21 +82,36 @@ io.sockets.on('connection', function (socket, pseudo) {
             console.log("changement masterChief");
             masterChief=tableau_player_ID[0];
             socket.broadcast.emit('newMasterChief',masterChief);
-        }else{
+			socket.emit('start');
+			socket.broadcast.emit('start');
+        }
+		else{
             console.log("y'a personne!!");
             masterChief=" ";
             socket.broadcast.emit('newMasterChief',masterChief);
         }
     })
     
-    socket.on('pret',function()
+    socket.on('pret',function(pseudo)
     {
-        pret=pret+1;
-        if(pret==tableau_player_ID.length)
-        {
-            socket.emit('start');
-            socket.broadcast.emit('start');
-        }
+        for(var i = 0; i<tableau_player_pret.length; i++)
+		{
+			if(tableau_player_ID[i]==pseudo)
+			{
+				tableau_player_pret[i]=1;
+			}
+		}
+		var somme = 0;
+		for(var i = 0; i<tableau_player_pret.length; i++)
+		{
+			somme+=tableau_player_pret[i];
+		}
+		if(somme==tableau_player_ID.length)
+		{
+			commencer = 1;
+			socket.emit('start');
+			socket.broadcast.emit('start');
+		}
     })
     // Gere tous les missiles
     // Ici on les stocke (indispensable ?)
@@ -130,7 +145,13 @@ io.sockets.on('connection', function (socket, pseudo) {
         {
             masterChief=tableau_player_ID[0];
             socket.broadcast.emit('newMasterChief',masterChief);
-        }else{
+			if(commencer==1)
+			{
+				socket.emit('start');
+				socket.broadcast.emit('start');
+			}
+        }
+		else{
             masterChief=" ";
             socket.broadcast.emit('newMasterChief',masterChief);
         }

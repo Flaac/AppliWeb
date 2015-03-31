@@ -71,16 +71,16 @@
             // On demande le pseudo, on l'envoie au serveur et on l'affiche dans le titre
             var pseudo = prompt('Quel est votre pseudo ?');
             $('#sssvg').find('circle').attr('id',pseudo);
-            socket.emit('nouveau_client', pseudo);
-            document.title = pseudo+' - '+ document.title;
+            socket.emit('nouveau_client', {pseudo : pseudo, X : parseInt(document.getElementById(pseudo).getAttributeNS(null,'cx')), Y : parseInt(document.getElementById(pseudo).getAttributeNS(null,'cy'))});
+			document.title = pseudo+' - '+ document.title;
             
 
             //Initialization 
             ;
-            var positionX = 50;
-            var positionY = 50;
+            var positionX = parseInt(document.getElementById(pseudo).getAttributeNS(null,'cx'));
+            var positionY = parseInt(document.getElementById(pseudo).getAttributeNS(null,'cy'));
             var vie = 100;
-            var niveau = 0;
+            var niveau = 1;
 			var count = 0;
             var masterChief = " ";
             var dmc_mouv = null;
@@ -97,13 +97,14 @@
             var est_mort = 0;
             var nombrePixel = 5;
             var svgNS = "http://www.w3.org/2000/svg";
+			console.log(document.getElementById('sssvg'));
 
             //----------------------------------------------------------------------    
             //-------------------------Sokcet.on------------------------------------
             //----------------------------------------------------------------------    
 
             $('#poke').click(function () {
-                socket.emit('pret');
+                socket.emit('pret',pseudo);
             })
 
             $('#soin').click(function()
@@ -144,8 +145,10 @@
 
             socket.on('start',function()
             {
-                niveau=1;
-                nb_missiles=0;
+				if(niveau==1&&count==0)
+				{
+					nb_missiles=0;
+				}
                 if(masterChief==pseudo)
                 {
                     dmc_mouv = setInterval(mouvementEnemy,50);
@@ -153,15 +156,15 @@
                 }
             })
 
-            socket.on('nouveau_client', function(pseu)
+            socket.on('nouveau_client', function(data)
             {
-                tableau_player.push(pseu);
+                tableau_player.push(data.pseudo);
                 var new_player = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
-                new_player.setAttribute("cx", 50);
-                new_player.setAttribute("cy", 50);
+                new_player.setAttribute("cx", data.X);
+                new_player.setAttribute("cy", data.Y);
                 new_player.setAttribute("r", 10);
                 new_player.setAttribute("fill", "blue");
-                new_player.setAttribute("id",pseu);
+                new_player.setAttribute("id",data.pseudo);
                 document.getElementById("joueur").appendChild(new_player);
                 nb_personne_connectees++;
                 refresh_connect();
@@ -255,12 +258,14 @@
                 {
                     if(Boolean(est_mort)===false)
                     {
-                            if(e.keyCode===40&&dmc_down==null)
+                        if(e.keyCode===40&&dmc_down==null)
                         {
+							console.log(1);
                             dmc_down=setInterval(go_down,50);
                         }
                         else if(e.keyCode===39&&dmc_right==null)
                         {
+							console.log(1);
                             dmc_right=setInterval(go_right,50);
                         }
                         else if(e.keyCode===38&&dmc_up==null)
@@ -470,8 +475,11 @@
                 var pas = 10;
                 var mouvementLegal;
                 mouvementLegal = 1;
-                if(positionY<document.getElementById('sssvg').getAttributeNS(null,'width'))
+				console.log(positionY);
+				console.log(document.getElementById('sssvg').getAttributeNS(null,'width'));
+                if(positionY<parseInt(document.getElementById('sssvg').getAttributeNS(null,'width')))
                 {
+					console.log(2);
                     var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
                     for (var i = 0; i < listPlayer.length; i++) 
                     {
@@ -485,8 +493,6 @@
                     if(Boolean(mouvementLegal))
                     {
                         positionY = positionY + pas;
-                        
-                        
                     }
                     
                 }
@@ -531,7 +537,7 @@
                 var pas = 10;
                 var mouvementLegal;
                 mouvementLegal = 1;
-                if(positionX<document.getElementById('sssvg').getAttributeNS(null,'height'))
+                if(positionX<parseInt(document.getElementById('sssvg').getAttributeNS(null,'height')))
                 {
                     var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
                     for (var i = 0; i < listPlayer.length; i++) 
