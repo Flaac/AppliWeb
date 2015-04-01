@@ -14,6 +14,7 @@ var tableau_player_pret = new Array();
 var tableau_player_coord = new Array();
 var commencer = 0;
 var nb_personnes = 0;
+var nb_personnes_init = 0;
 var masterChief =  " ";
 
 var allowCrossDomain = function(req, res, next) {
@@ -98,14 +99,12 @@ io.sockets.on('connection', function (socket, pseudo) {
         }
         if(socket.pseudo==masterChief&&tableau_player_ID.length>0)
         {
-            console.log("changement masterChief");
             masterChief=tableau_player_ID[0];
             socket.broadcast.emit('newMasterChief',masterChief);
 			socket.emit('start');
 			socket.broadcast.emit('start');
         }
 		else{
-            console.log("y'a personne!!");
             masterChief=" ";
             socket.broadcast.emit('newMasterChief',masterChief);
         }
@@ -128,8 +127,9 @@ io.sockets.on('connection', function (socket, pseudo) {
 		if(somme==tableau_player_ID.length)
 		{
 			commencer = 1;
-			socket.emit('start',tableau_player_name.length);
-			socket.broadcast.emit('start',tableau_player_name.length);
+			nb_personnes_init = tableau_player_ID.length;
+			socket.emit('start');
+			socket.broadcast.emit('start');
 		}
     })
     // Gere tous les missiles
@@ -179,6 +179,19 @@ io.sockets.on('connection', function (socket, pseudo) {
         console.log(tableau_player_ID);
         nb_personnes = nb_personnes - 1;
         socket.emit('nb_connect', nb_personnes);
+		
+		if(nb_personnes==0)
+		{
+			tableau_missile = new Array();
+			tableau_player_name = new Array();
+			tableau_player_ID = new Array();
+			tableau_player_pret = new Array();
+			tableau_player_coord = new Array();
+			commencer = 0;
+			nb_personnes = 0;
+			nb_personnes_init = 0;
+			masterChief =  " ";
+		}
     })
     
     socket.on('mouvementEnemy',function(data)

@@ -52,11 +52,12 @@
                     <li id="nbvag">Vague : 1</li>
                     <li id="nbmis">Nombre de missiles tirés : 0</li>
                     <li id="nbpts">Nombre de points : 0</li>
-                    <li>Vagues numéro</li>
+                    
 
             </lu>
             <p><input type="button" value="pret a commencer" id="poke" /></p>
             <p><input type="button" value="de la vie !" id="soin" /></p>
+			<p><input type="button" value="détruire tous les ennemis" id="armageddon" /></p>
         </div>
         <div id = "nbconnect"><p> " " </p></div>
 
@@ -92,11 +93,13 @@
             var masterChief = " ";
 			var nbJoueur = 1;
             var dmc_mouv = null;
+			var arma = 0;
             var dmc_create = null;
             var dmc_up = null;
             var dmc_down = null;
             var dmc_left = null;
             var dmc_right = null;
+			var dmc_arma = null;
             var tableau_player = new Array();
             var nb_personne_connectees = 0;
             var nb_kill_enemy = 0;
@@ -123,6 +126,19 @@
                     vie = vie + 20;
                 }
                 refresh_enemy();
+            })
+			
+			$('#armageddon').click(function()
+            {
+                if(nb_points>=10000&&Boolean(est_mort)===false)
+                {
+                    nb_points = nb_points - 10000;
+					arma=0;
+					dmc_arma=setInterval(armageddon,10);
+					
+                }
+                refresh_enemy();
+				
             })
 
             socket.on('nb_connect',function(nb_personne)
@@ -162,9 +178,10 @@
                 console.log(masterChief+"et"+pseudo);
             })
 
-            socket.on('start',function(nombre)
+            socket.on('start',function()
             {
-				nbJoueur = nombre;
+				var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
+				nbJoueur = listPlayer.length;
 				if(niveau==1&&count==0)
 				{
 					nb_missiles=0;
@@ -172,7 +189,7 @@
                 if(masterChief==pseudo)
                 {
                     dmc_mouv = setInterval(mouvementEnemy,50);
-                    dmc_create = setInterval(newEnemy,1000);
+                    dmc_create = setInterval(newEnemy,1000/nbJoueur);
                 }
             })
 
@@ -261,12 +278,12 @@
             
             socket.on('mort',function(pseudo)
             {
-                var mort = document.getElementById(pseudo);
+				var mort = document.getElementById(pseudo);
                 var pere = mort.parentNode;
                 pere.removeChild(mort);
                 nb_personne_connectees--;
                 refresh_connect();
-            })
+			})
             
             //----------------------------------------------------------------------    
             //-------------------------Listener-------------------------------------
@@ -459,10 +476,17 @@
                     var mort = document.getElementById(pseudo);
                     var pere = mort.parentNode;
                     pere.removeChild(mort);
+					nb_personne_connectees--;
+					refresh_connect();
                     clearInterval(dmc_create);
                     clearInterval(dmc_mouv);
                     est_mort=1;                    
                 }
+				if(nb_personne_connectees==0)
+				{
+					dmc_mouv = setInterval(mouvementEnemy,50);
+                    dmc_create = setInterval(newEnemy,4);
+				}
             }
             //Actualise la position du joueur en prenant en compte la collision entre les murs
             function go_up()
@@ -506,19 +530,15 @@
                 var pas = 10;
                 var mouvementLegal;
                 mouvementLegal = 1;
-				console.log(positionY);
-				console.log(document.getElementById('sssvg').getAttributeNS(null,'width'));
-                if(positionY<parseInt(document.getElementById('sssvg').getAttributeNS(null,'height')))
+				if(positionY<parseInt(document.getElementById('sssvg').getAttributeNS(null,'height')))
                 {
-					console.log(2);
-                    var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
+					var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
                     for (var i = 0; i < listPlayer.length; i++) 
                     {
                         var distance = (listPlayer.item(i).getAttributeNS(null,'cx')-(positionX))*(listPlayer.item(i).getAttributeNS(null,'cx')-(positionX))+(listPlayer.item(i).getAttributeNS(null,'cy')-(positionY + pas))*(listPlayer.item(i).getAttributeNS(null,'cy')-(positionY + pas));
                         if(distance<=200&&(listPlayer.item(i).getAttributeNS(null,'cx')!=positionX||listPlayer.item(i).getAttributeNS(null,'cy')!=positionY))
                         {
                             mouvementLegal = 0;
-                            console.log(distance);
                         }
                     }
                     if(Boolean(mouvementLegal))
@@ -648,43 +668,99 @@
                 var listPlayer = document.getElementById("joueur").getElementsByTagNameNS(svgNS,'circle');
                 for(var i=0; i<listEnemy.length; i++)
                 {
-                    var min = 0;
-                    var distance = (listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(0).getAttributeNS(null,"cx"))*(listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(0).getAttributeNS(null,"cx"))+(listPlayer.item(0).getAttributeNS(null,"cy")-listEnemy.item(i).getAttributeNS(null,"cy"))*(listPlayer.item(0).getAttributeNS(null,"cy")-listEnemy.item(i).getAttributeNS(null,"cy"));
-                    for(var j = 1; j<listPlayer.length; j++)
-                    {
-                        var aux = (listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(j).getAttributeNS(null,"cx"))*(listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(j).getAttributeNS(null,"cx"))+(listEnemy.item(i).getAttributeNS(null,"cy")-listPlayer.item(j).getAttributeNS(null,"cy"))*(listEnemy.item(i).getAttributeNS(null,"cy")-listPlayer.item(j).getAttributeNS(null,"cy"));
-                        if(distance>aux)
-                        {
-                            distance=aux;
-                            min = j;
-                        }
-                    }
-                    var total = Math.abs(parseInt(listPlayer.item(min).getAttributeNS(null,"cx"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cx")))+Math.abs(parseInt(listPlayer.item(min).getAttributeNS(null,"cy"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cy")));
-                    if(total<=8)
-                    {
-                        listEnemy.item(i).setAttributeNS(null,"cx",parseInt(listPlayer.item(min).getAttributeNS(null,"cx")));
-                        listEnemy.item(i).setAttributeNS(null,"cy",parseInt(listPlayer.item(min).getAttributeNS(null,"cy")));
-                    }
-                    else
-                    {
-                        listEnemy.item(i).setAttributeNS(null,"cx",(parseInt(listPlayer.item(min).getAttributeNS(null,"cx"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cx")))*nombrePixel/total+parseInt(listEnemy.item(i).getAttributeNS(null,"cx")));
-                        listEnemy.item(i).setAttributeNS(null,"cy",(parseInt(listPlayer.item(min).getAttributeNS(null,"cy"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cy")))*nombrePixel/total+parseInt(listEnemy.item(i).getAttributeNS(null,"cy")));
-                    }
-                    distance = (listEnemy.item(i).getAttributeNS(null,"cx")-positionX)*(listEnemy.item(i).getAttributeNS(null,"cx")-positionX)+(listEnemy.item(i).getAttributeNS(null,"cy")-positionY)*(listEnemy.item(i).getAttributeNS(null,"cy")-positionY)
-                    if(distance<200)
-                    {
-                        degat();
-                        console.log(vie);
-                    }
+					if(listPlayer.length!=0)
+					{
+						var min = 0;
+						var distance = (listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(0).getAttributeNS(null,"cx"))*(listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(0).getAttributeNS(null,"cx"))+(listPlayer.item(0).getAttributeNS(null,"cy")-listEnemy.item(i).getAttributeNS(null,"cy"))*(listPlayer.item(0).getAttributeNS(null,"cy")-listEnemy.item(i).getAttributeNS(null,"cy"));
+						for(var j = 1; j<listPlayer.length; j++)
+						{
+							var aux = (listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(j).getAttributeNS(null,"cx"))*(listEnemy.item(i).getAttributeNS(null,"cx")-listPlayer.item(j).getAttributeNS(null,"cx"))+(listEnemy.item(i).getAttributeNS(null,"cy")-listPlayer.item(j).getAttributeNS(null,"cy"))*(listEnemy.item(i).getAttributeNS(null,"cy")-listPlayer.item(j).getAttributeNS(null,"cy"));
+							if(distance>aux)
+							{
+								distance=aux;
+								min = j;
+							}
+						}
+						var total = Math.abs(parseInt(listPlayer.item(min).getAttributeNS(null,"cx"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cx")))+Math.abs(parseInt(listPlayer.item(min).getAttributeNS(null,"cy"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cy")));
+						if(total<=8)
+						{
+							listEnemy.item(i).setAttributeNS(null,"cx",parseInt(listPlayer.item(min).getAttributeNS(null,"cx")));
+							listEnemy.item(i).setAttributeNS(null,"cy",parseInt(listPlayer.item(min).getAttributeNS(null,"cy")));
+						}
+						else
+						{
+							listEnemy.item(i).setAttributeNS(null,"cx",(parseInt(listPlayer.item(min).getAttributeNS(null,"cx"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cx")))*nombrePixel/total+parseInt(listEnemy.item(i).getAttributeNS(null,"cx")));
+							listEnemy.item(i).setAttributeNS(null,"cy",(parseInt(listPlayer.item(min).getAttributeNS(null,"cy"))-parseInt(listEnemy.item(i).getAttributeNS(null,"cy")))*nombrePixel/total+parseInt(listEnemy.item(i).getAttributeNS(null,"cy")));
+						}
+						distance = (listEnemy.item(i).getAttributeNS(null,"cx")-positionX)*(listEnemy.item(i).getAttributeNS(null,"cx")-positionX)+(listEnemy.item(i).getAttributeNS(null,"cy")-positionY)*(listEnemy.item(i).getAttributeNS(null,"cy")-positionY)
+						if(distance<200)
+						{
+							degat();
+						}
+					}
+					else{
+						var total = Math.abs(document.getElementById('sssvg').getAttributeNS(null,'width')/2-parseInt(listEnemy.item(i).getAttributeNS(null,"cx")))+Math.abs(document.getElementById('sssvg').getAttributeNS(null,'height')/2-parseInt(listEnemy.item(i).getAttributeNS(null,"cy")));
+						if(total<=nombrePixel)
+						{
+							listEnemy.item(i).setAttributeNS(null,"cx",0);
+							listEnemy.item(i).setAttributeNS(null,"cy",0);
+						}
+						else
+						{
+							listEnemy.item(i).setAttributeNS(null,"cx",(document.getElementById('sssvg').getAttributeNS(null,'width')/2-parseInt(listEnemy.item(i).getAttributeNS(null,"cx")))*nombrePixel/total+parseInt(listEnemy.item(i).getAttributeNS(null,"cx")));
+							listEnemy.item(i).setAttributeNS(null,"cy",(document.getElementById('sssvg').getAttributeNS(null,'height')/2-parseInt(listEnemy.item(i).getAttributeNS(null,"cy")))*nombrePixel/total+parseInt(listEnemy.item(i).getAttributeNS(null,"cy")));
+						}
+					}
+                    
                     socket.emit('mouvementEnemy',{pseudo : listEnemy.item(i).getAttributeNS(null,'id'),positionX : listEnemy.item(i).getAttributeNS(null,'cx'), positionY : listEnemy.item(i).getAttributeNS(null,'cy')});
                 }
             }
             
+            function armageddon()
+			{
+				if(arma<=parseInt(document.getElementById('sssvg').getAttributeNS(null,'width')))
+				{
+					tracer_ligne({pageX : arma, pageY : 0});
+					setTimeout(destroy,50);
+					nb_missiles++;
+					document.getElementById('nbmis').innerHTML = "Nombre de missiles tirés : "+nb_missiles;
+					arma+=10;
+				}
+				else if(arma<=parseInt(document.getElementById('sssvg').getAttributeNS(null,'width'))+parseInt(document.getElementById('sssvg').getAttributeNS(null,'height')))
+				{
+					tracer_ligne({pageX : parseInt(document.getElementById('sssvg').getAttributeNS(null,'width')), pageY : arma-parseInt(document.getElementById('sssvg').getAttributeNS(null,'width'))});
+					setTimeout(destroy,50);
+					nb_missiles++;
+					document.getElementById('nbmis').innerHTML = "Nombre de missiles tirés : "+nb_missiles;
+					arma+=10;
+				}
+				else if(arma<=2*parseInt(document.getElementById('sssvg').getAttributeNS(null,'width'))+parseInt(document.getElementById('sssvg').getAttributeNS(null,'height')))
+				{
+					tracer_ligne({pageX : 2*parseInt(document.getElementById('sssvg').getAttributeNS(null,'width'))+parseInt(document.getElementById('sssvg').getAttributeNS(null,'height'))-arma, pageY : parseInt(document.getElementById('sssvg').getAttributeNS(null,'height'))});
+					setTimeout(destroy,50);
+					nb_missiles++;
+					document.getElementById('nbmis').innerHTML = "Nombre de missiles tirés : "+nb_missiles;
+					arma+=10;
+				}
+				else if(arma<=2*parseInt(document.getElementById('sssvg').getAttributeNS(null,'width'))+2*parseInt(document.getElementById('sssvg').getAttributeNS(null,'height')))
+				{
+					tracer_ligne({pageX : 0, pageY : 2*parseInt(document.getElementById('sssvg').getAttributeNS(null,'width'))+2*parseInt(document.getElementById('sssvg').getAttributeNS(null,'height'))-arma});
+					setTimeout(destroy,50);
+					nb_missiles++;
+					document.getElementById('nbmis').innerHTML = "Nombre de missiles tirés : "+nb_missiles;
+					arma+=10;
+				}
+				else{
+				clearInterval(dmc_arma);
+					dmc_arma=null;
+				}
+			}
             
-            function newEnemy()
+			function newEnemy()
             {
                 var myCircle = document.createElementNS("http://www.w3.org/2000/svg","circle");
                 count = count+1;
+				console.log("new !");
 
 				if(document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle').length==0)
                 {
@@ -696,6 +772,7 @@
                     myCircle.setAttributeNS(null,"id",parseInt(document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle')[document.getElementById("enemy").getElementsByTagNameNS(svgNS,'circle').length-1].getAttributeNS(null,'id'))+1);
                 }
                 var randomVar = Math.floor((Math.random() * 4) + 1);
+				console.log(randomVar);
                 if(randomVar==1)
                 {
                     myCircle.setAttributeNS(null,"cx",-10);
@@ -732,7 +809,7 @@
                     myCircle.setAttributeNS(null,"stroke","none");
                     document.getElementById("enemy").appendChild(myCircle);
                 }
-                if(count==50*niveau*nbJoueur)
+                if(count==50*niveau*nbJoueur&&Boolean(est_mort)===false)
 				{
 					clearInterval(dmc_create);
 					dmc_create=null;
